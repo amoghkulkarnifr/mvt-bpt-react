@@ -18,26 +18,26 @@ API_REPLY_FIELD_NAME = 'Time Series (Daily)'
 LENGTH_OF_RECORDS_STORED = 365
 
 def get_daily_timeseries(ticker_symbol: str) -> Response:
-    url = 'https://www.alphavantage.co/query'
-    payload = {
-      'function': API_FUNCTION_TYPE,
-      'symbol': ticker_symbol + '.NSE',
-      'outputsize': 'full',
-      'apikey': ALPHA_VANTAGE_API_KEY
-    }
+  url = 'https://www.alphavantage.co/query'
+  payload = {
+    'function': API_FUNCTION_TYPE,
+    'symbol': ticker_symbol + '.NSE',
+    'outputsize': 'full',
+    'apikey': ALPHA_VANTAGE_API_KEY
+  }
 
-    reply = requests.get(url, params=payload)
-    return json.loads(reply.text)
+  reply = requests.get(url, params=payload)
+  return json.loads(reply.text)
 
 def read_ticker_symbols(filename) -> List[str]:
-    company_names = []
-    file_abs_path = WindowsPath.joinpath(
-      WindowsPath.cwd(), 'data', 'market', filename)
-    with open(file=file_abs_path) as f:
-        file_raw_content = f.read()
-        company_names = file_raw_content.split('\n')
+  company_names = []
+  file_abs_path = WindowsPath.joinpath(
+    WindowsPath.cwd(), 'data', 'market', filename)
+  with open(file=file_abs_path) as f:
+      file_raw_content = f.read()
+      company_names = file_raw_content.split('\n')
         
-    return company_names[:-1]
+  return company_names[:-1]
 
 def random_sleep(lower: int = 5, upper: int = 10) -> None:
   sleep_duration = random.randrange(lower, upper)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
   all_ticker_symbols = read_ticker_symbols('NIFTY50_constituents.txt')
 
   output_csv_data = WindowsPath.joinpath(
-      WindowsPath.cwd(), 'data', 'market', 'market_data_output.csv')
+    WindowsPath.cwd(), 'data', 'market', 'market_data_output.csv')
     
   # Delete the output file if it exists 
   if os.path.exists(output_csv_data):
