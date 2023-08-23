@@ -7,7 +7,7 @@ from copy import deepcopy
 import warnings
 
 _OUTPUT_NO_OF_YEARS = 1
-OUTPUT_NO_OF_LINES = int(_OUTPUT_NO_OF_YEARS*365) + 1
+OUTPUT_NO_OF_LINES = int(_OUTPUT_NO_OF_YEARS*365)
 
 def read_ticker_symbols(filename) -> List[str]:
   company_names = []
@@ -36,12 +36,20 @@ if __name__ == "__main__":
     out_csv_data_path = WindowsPath.joinpath(
       WindowsPath.cwd(), 'data', 'market', 'post_processed', ticksym + '.csv')
     
+    contentToWrite = []
+    
     try:
       with open(in_csv_data_path, 'r') as in_f:
         with open(out_csv_data_path, 'w', newline='') as out_f:
-          _in_csv_content = csv.reader(in_f)
+          _in_csv_content = list(csv.reader(in_f, delimiter=','))
           writer = csv.writer(out_f)
 
-          writer.writerows(list(_in_csv_content)[:OUTPUT_NO_OF_LINES])
+          # Header
+          contentToWrite.append(_in_csv_content[0])
+          # ...and the latest n rows, as the start of all timeseries is not same
+          contentToWrite.append(_in_csv_content[-OUTPUT_NO_OF_LINES:])
+          
+          # Write them
+          writer.writerows(contentToWrite)
     except FileNotFoundError:
       warnings.warn('Data file for {} is not found'.format(ticksym))
