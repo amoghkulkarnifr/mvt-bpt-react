@@ -27,7 +27,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 interface BasicTableProps {
   minWidth?: number,
   header: string[],
-  rows: string[][]
+  rows: (string | number)[][]
 }
 
 const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, header, rows }) => {
@@ -60,6 +60,7 @@ const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, header, rows }) =
               {
                 row.map((cell, cIndex) => (
                   <TableCell 
+                  key={cIndex}
                     component={cIndex == 0? "th": undefined} 
                     align={cIndex == 0? undefined: 'right'}
                     scope="row">
