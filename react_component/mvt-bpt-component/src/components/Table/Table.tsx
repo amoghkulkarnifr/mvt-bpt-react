@@ -6,14 +6,11 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import TablePagination from '@mui/material/TablePagination';
 import Paper from '@mui/material/Paper';
 
-// Pagination
-import TablePagination from '@mui/material/TablePagination';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import IconButton from '@mui/material/IconButton';
-import FormControlLabel from '@mui/material/FormControlLabel';
-
+// CSV parser
+import Papa from 'papaparse';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -34,14 +31,34 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 interface BasicTableProps {
   minWidth?: number,
   rowCount?: number,
+  file?: boolean,
+  filename?: string,
   header: string[],
-  rows: (string | number)[][]
+  data: (string | number)[][]
 }
 
-const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, rowCount=5, header, rows }) => {
+const BasicTable: React.FC<BasicTableProps> = ({ 
+    minWidth=350, 
+    rowCount=5, 
+    file, 
+    filename, 
+    header, 
+    data 
+  }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(rowCount);
+  const [dataRows, setDataRows] = React.useState(data);
+  const [headerRow, setHeaderRow] = React.useState(header);
 
+  const visibleRows = React.useMemo(
+    () =>
+      dataRows.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage,
+      ),
+    [page, rowsPerPage],
+  );
+  
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -53,16 +70,29 @@ const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, rowCount=5, heade
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - dataRows.length) : 0;
 
-  const visibleRows = React.useMemo(
-    () =>
-      rows.slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage,
-      ),
-    [page, rowsPerPage],
-  );
+  React.useEffect(() => {
+    if (file) {
+      let parsed_csv_file_data: (string | number)[][] = []
+
+      fetch('market_data/' + filename + '.csv')
+        .then((response) => response.text())
+        .then((text) => {
+          Papa.parse(text, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              setHeaderRow((prev) => results.meta.fields!);
+              results.data.map((d) => {
+                parsed_csv_file_data.push(Object.values(d!));
+              });
+              setDataRows((prev) => parsed_csv_file_data);
+            }
+          });
+        });
+    }
+  }, []);
 
   return (
     <>
@@ -74,7 +104,7 @@ const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, rowCount=5, heade
         <TableHead>
           <TableRow>
             {
-              header.map((cell, cIndex) => (
+              headerRow.map((cell, cIndex) => (
                 <StyledTableCell
                   key={cIndex}
                   align={cIndex == 0? undefined: 'right'}>
@@ -118,7 +148,7 @@ const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, rowCount=5, heade
     <TablePagination
       rowsPerPageOptions={[5, 10, 25]}
       component="div"
-      count={rows.length}
+      count={dataRows.length}
       rowsPerPage={rowsPerPage}
       page={page}
       onPageChange={handleChangePage}
