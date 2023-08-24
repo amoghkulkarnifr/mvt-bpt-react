@@ -76,10 +76,7 @@ Papa.parse(adani_data, {
   header: true,
   skipEmptyLines: true,
 	complete: function(results) {
-		console.log("Finished parsing!");
-    console.log(results)
-
-    parsed_csv_header = results.meta.fields!;
+		parsed_csv_header = results.meta.fields!;
     results.data.map((d) => {
       parsed_csv_data.push(Object.values(d!));
     });
@@ -89,5 +86,31 @@ export const Static_CSV: Story = {
   args: {
     header: parsed_csv_header,
     rows: parsed_csv_data
+  }
+}
+
+/**
+ * Table with data from CSV stored in /assets
+ */
+let parsed_csv_file_header: string[] = [];
+let parsed_csv_file_data: string[][] = [];
+fetch('market_data/ADANIENT.csv')
+  .then((response) => response.text())
+  .then((text) => {
+    Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        parsed_csv_file_header = results.meta.fields!;
+        results.data.map((d) => {
+          parsed_csv_file_data.push(Object.values(d!));
+        });
+      }
+    });
+  });
+export const File_CSV: Story = {
+  args: {
+    header: parsed_csv_file_header,
+    rows: parsed_csv_file_data
   }
 }
