@@ -1,6 +1,7 @@
 from typing import List 
 
 import csv
+from enum import Enum
 from pathlib import WindowsPath
 from copy import deepcopy
 
@@ -19,6 +20,50 @@ def read_ticker_symbols(filename) -> List[str]:
   
   return company_names[:-1]
 
+class Column(Enum):
+  DATE = 0
+  SYMBOL = 1
+  SERIES = 2
+  PREV_CLOSE = 3
+  OPEN = 4
+  HIGH = 5
+  LOW = 6
+  LAST = 7
+  CLOSE = 8
+  VWAP = 9
+  VOL = 10
+  TURNOVER = 11
+  TRADES = 12
+  DELIVERABLE_VOL = 13
+  PERCENT_DEL = 14
+
+cols_to_keep = [
+  Column.DATE.value, 
+  Column.OPEN.value, 
+  Column.LOW.value, 
+  Column.HIGH.value, 
+  Column.CLOSE.value
+]
+
+cols_datatypes = {
+  Column.DATE.value: str,
+  Column.OPEN.value: float,
+  Column.LOW.value: float,
+  Column.HIGH.value: float,
+  Column.CLOSE.value: float
+}
+
+def sanitize_csv_data(raw_input:List[str], header:bool=False):
+  return_data = []
+  
+  for col in cols_to_keep:
+    if not header:
+      return_data.append(cols_datatypes[col](raw_input[col]))
+    else:
+      return_data.append(str(raw_input[col]))
+  
+  return return_data
+
 if __name__ == "__main__":
   all_ticker_symbols = read_ticker_symbols('NIFTY50_constituents.txt')
 
@@ -36,7 +81,7 @@ if __name__ == "__main__":
     out_csv_data_path = WindowsPath.joinpath(
       WindowsPath.cwd(), 'data', 'market', 'post_processed', ticksym + '.csv')
     
-    contentToWrite = []
+    content_to_write = []
     
     try:
       with open(in_csv_data_path, 'r') as in_f:
@@ -45,11 +90,13 @@ if __name__ == "__main__":
           writer = csv.writer(out_f)
 
           # Header
-          contentToWrite.append(_in_csv_content[0])
-          # ...and the latest n rows, as the start of all timeseries is not same
-          contentToWrite.append(_in_csv_content[-OUTPUT_NO_OF_LINES:])
+          header_row = _in_csv_content[0]
+          content_to_write.append(sanitize_csv_data(raw_input=header_row, header=True))
+          for datapoint in _in_csv_content[-OUTPUT_NO_OF_LINES:]:
+            # ...and the latest n rows, as the start of all timeseries is not same
+            content_to_write.append(sanitize_csv_data(raw_input=datapoint))
           
           # Write them
-          writer.writerows(contentToWrite)
+          writer.writerows(content_to_write)
     except FileNotFoundError:
       warnings.warn('Data file for {} is not found'.format(ticksym))
