@@ -8,6 +8,13 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
+// Pagination
+import TablePagination from '@mui/material/TablePagination';
+import TableSortLabel from '@mui/material/TableSortLabel';
+import IconButton from '@mui/material/IconButton';
+import FormControlLabel from '@mui/material/FormControlLabel';
+
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: theme.palette.grey[500],
@@ -26,12 +33,39 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 interface BasicTableProps {
   minWidth?: number,
+  rowCount?: number,
   header: string[],
   rows: (string | number)[][]
 }
 
-const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, header, rows }) => {
+const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, rowCount=5, header, rows }) => {
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(rowCount);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Avoid a layout jump when reaching the last page with empty rows.
+  const emptyRows =
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+
+  const visibleRows = React.useMemo(
+    () =>
+      rows.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage,
+      ),
+    [page, rowsPerPage],
+  );
+
   return (
+    <>
     <TableContainer component={Paper}>
       <Table 
         sx={{ minWidth: minWidth }} 
@@ -53,14 +87,14 @@ const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, header, rows }) =
 
         {/* Table rows */}
         <TableBody>
-          {rows.map((row, rIndex) => (
+          {visibleRows.map((row, rIndex) => (
             <StyledTableRow
               key={rIndex}
             >
               {
                 row.map((cell, cIndex) => (
                   <TableCell 
-                  key={cIndex}
+                    key={cIndex}
                     component={cIndex == 0? "th": undefined} 
                     align={cIndex == 0? undefined: 'right'}
                     scope="row">
@@ -70,9 +104,27 @@ const BasicTable: React.FC<BasicTableProps> = ({ minWidth=350, header, rows }) =
               }
             </StyledTableRow>
           ))}
+          {emptyRows > 0 && (
+            <StyledTableRow
+              style={{
+                height: 53 * emptyRows,
+              }}>
+              <TableCell />
+            </StyledTableRow>
+          )}
         </TableBody>
       </Table>
     </TableContainer>
+    <TablePagination
+      rowsPerPageOptions={[5, 10, 25]}
+      component="div"
+      count={rows.length}
+      rowsPerPage={rowsPerPage}
+      page={page}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+    />
+    </>
   );
 }
 
