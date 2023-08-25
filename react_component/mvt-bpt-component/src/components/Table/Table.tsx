@@ -31,7 +31,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 interface BasicTableProps {
   minWidth?: number,
   rowCount?: number,
-  file?: boolean,
   filename?: string,
   header: string[],
   data: (string | number)[][]
@@ -40,15 +39,36 @@ interface BasicTableProps {
 const BasicTable: React.FC<BasicTableProps> = ({ 
     minWidth=350, 
     rowCount=5, 
-    file, 
-    filename, 
+    filename="", 
     header, 
     data 
   }) => {
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(rowCount);
-  const [dataRows, setDataRows] = React.useState(data);
-  const [headerRow, setHeaderRow] = React.useState(header);
+  const [page, setPage] = React.useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(rowCount);
+  const [headerRow, setHeaderRow] = React.useState<string[]>(header);
+  const [dataRows, setDataRows] = React.useState<(string | number)[][]>(data);
+
+  React.useEffect(() => {
+    if (filename) {
+      let parsed_csv_file_data: (string | number)[][] = []
+
+      fetch('market_data/' + filename + '.csv')
+        .then((response) => response.text())
+        .then((text) => {
+          Papa.parse(text, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              results.data.map((d) => {
+                parsed_csv_file_data.push(Object.values(d!));
+              });
+              setHeaderRow(() => results.meta.fields!);
+              setDataRows(() => parsed_csv_file_data!);
+            },
+          });
+        });
+    }
+  }, []);
 
   const visibleRows = React.useMemo(
     () =>
@@ -71,28 +91,6 @@ const BasicTable: React.FC<BasicTableProps> = ({
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - dataRows.length) : 0;
-
-  React.useEffect(() => {
-    if (file) {
-      let parsed_csv_file_data: (string | number)[][] = []
-
-      fetch('market_data/' + filename + '.csv')
-        .then((response) => response.text())
-        .then((text) => {
-          Papa.parse(text, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-              setHeaderRow((prev) => results.meta.fields!);
-              results.data.map((d) => {
-                parsed_csv_file_data.push(Object.values(d!));
-              });
-              setDataRows((prev) => parsed_csv_file_data);
-            }
-          });
-        });
-    }
-  }, []);
 
   return (
     <>

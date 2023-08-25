@@ -94,8 +94,7 @@ export const Static_CSV: Story = {
  */
 export const File_CSV: Story = {
   args: {
-    file: true,
-    filename: 'ADANIENT',
+    filename: 'LT',
     header: [],
     data: []
   }
